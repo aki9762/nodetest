@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>AngularJS Simple Form Demo</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+	</head>
+
+	<body ng-app="formApp" class="jumbotron">
+	 <div class="container-fluid">
+		<div ng-controller="empcontroller">
+
+			<form name="myForm" class="form-horizontal text-center" novalidate>
+				<div class="form-group">
+				 <label>Name : </label>
+				 <input type="text" name="name" ng-model="employee.name" required/><br/>
+				 <span ng-show="myForm.name.$error.required && myForm.name.$invalid">The name is required.</span>
+				</div>
+				
+
+				<div class="form-group">
+				<label>E-mail : </label>
+				<input type="email" name="email" ng-model="employee.email" required/><br/>
+				<span ng-show="myForm.email.$invalid && !myForm.email.$pristine">Enter a valid email.</span>
+				<span ng-show="myForm.email.$error.required && myForm.email.$invalid">email is required.</span>
+				</div>
+				
+				<div class="form-group">
+				<label>Phone No. : </label>
+				<input type="text" name="phoneno" ng-minlength="10"
+           ng-maxlength="10" ng-model="employee.phoneno" required/><br/>
+				<span ng-show="myForm.phoneno.$error.required || registration.phoneno.$error.number">Phone No. Required!</span>
+      <span class="error" ng-show="myForm.phoneno.$error.minlength">Phone no not less that 10 char.</span>
+      <span class="error" ng-show="myForm.phoneno.$error.maxlength">Phone no not more than 11 char.</span>
+				</div>
+
+				<input type="submit" class="btn btn-success" ng-disabled="myForm.$invalid" ng-click="save(employee)" value="Save" />
+			</form>
+			</br>
+			
+			<div class="table table-striped table-hover table-bordered">
+                        <table class="table table-hover m-b-none">
+                            <thead>
+                                <tr>
+                                    <th>Id</th>
+                                    <th>name</th>
+                                    <th>Email Id</th>
+									<th>Phone No</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="emp in employee">
+								<td>{{emp.empId}}</td>
+								<td>{{emp.empName}}</td>
+								<td>{{emp.emailId}}</td>
+								<td>{{emp.phoneno}}</td>
+                                </tr>
+                            </tbody>
+							
+							
+							
+							
+                        </table>
+						<p class="text-center">
+						<pagination total-items="total" ng-model="allemployee.currentPage" max-size="allemployee.maxSize" items-per-page="allemployee.recordsPerPage" class="pagination-sm" boundary-links="true" rotate="true" num-pages="allemployee.numPages" force-ellipses="true" previous-text="Pre" next-text="Next" ng-change="allemployeepagechange()"></pagination>
+						</p>
+                    </div>
+					
+		</div>
+		</div>
+
+	<script src="http://code.angularjs.org/1.2.16/angular.js"></script>
+	 <script src="http://code.angularjs.org/1.2.16/angular-resource.js"></script>
+	<script src="http://angular-ui.github.io/bootstrap/ui-bootstrap-tpls-0.11.0.js"></script>
+</body>
+</html>
+
+<script>
+var app = angular.module('formApp', ['ui.bootstrap']);
+
+app.controller('empcontroller', function($scope, $http, empservice) {
+
+$scope.reset = function() {
+            $scope.employee = "";
+        };
+		
+		$scope.allemployee = {
+        'currentPage': 1,
+        'maxSize': 5,
+        'numPages': 3,
+        'recordsPerPage': 5
+    };
+	
+	
+    var payload= {
+                    "pageNo": 1,
+        "recordPerPage": 5
+                    };
+    empservice.getemployeewithpagination(payload).then(function(response){
+        console.log("All Projects: ",response);
+        $scope.employee = response["0"].data;
+	
+    },function(error){
+
+    });
+	
+	empservice.getemployeecount().then(function(response){
+	$scope.total = response["0"].count;
+	}
+	,function(error){
+		
+    });
+	
+	$scope.allemployeepagechange = function() {
+     var payload= {
+                    "pageNo": $scope.allemployee.currentPage,
+					"recordPerPage": $scope.allemployee.recordsPerPage
+                 };
+
+         empservice.getemployeewithpagination(payload)
+            .then(function(response) {
+                $scope.employee = response["0"].data;
+            });
+    };
+  
+$scope.save = function(emp) {
+    var payload= {
+          "name": emp.name,
+          "emailid": emp.email,
+          "phoneno": emp.phoneno
+        };
+        empservice.saveemployee(payload).then(function(response) {
+		var payload= {
+                    "pageNo": 1,
+        "recordPerPage": 5
+                    };
+        empservice.getemployeewithpagination(payload).then(function(response){
+        console.log("All Projects: ",response);
+        $scope.employee = response["0"].data;
+	
+    },function(error){
+
+    });
+        }, function(err) {
+                console.log("Error:", err);
+            });
+    };
+	
+	
+});
+
+app.service("empservice",function($http){
+
+this.saveemployee = function(payload){
+        return $http.post("createemployee", payload).then(function (result) {
+            return result.data;
+        });
+    };
+	
+	this.getemployeewithpagination = function(payload){
+        return $http.post("empwithpagination", payload).then(function (result) {
+            return result.data;
+        });
+    };
+	
+	this.getemployeecount = function(payload){
+        return $http.get("getemployeecount").then(function (result) {
+            return result.data;
+        });
+    };
+
+});
+</script>
